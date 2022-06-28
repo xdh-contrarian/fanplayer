@@ -185,7 +185,7 @@ typedef struct { // for internal use only
     int64_t vpts;  // current vpts
     int     apktn; // available audio packet number in pktqueue
     int     vpktn; // available video packet number in pktqueue
-    void   *winmsg;
+    void   *winmsg;    // 窗口句柄
 } CMNVARS;
 //-- player common variables
 

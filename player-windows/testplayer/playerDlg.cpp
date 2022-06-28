@@ -142,6 +142,12 @@ void CplayerDlg::PlayerReset(PLAYER_INIT_PARAMS *params)
 {
     player_close(m_ffPlayer);
     m_ffPlayer = player_open(m_strUrl, GetSafeHwnd(), params);
+
+	// test rstp
+    //char testUrl[MAX_PATH];
+    //strcpy(testUrl, "rtsp://184.72.239.149/vod/mp4://BigBuckBunny_175k.mov");
+    //m_ffPlayer = player_open(testUrl, GetSafeHwnd(), params);
+
 }
 
 void CplayerDlg::PlayerOpenFile(TCHAR *file)

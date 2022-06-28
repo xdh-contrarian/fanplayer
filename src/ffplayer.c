@@ -29,13 +29,18 @@
 // 内部类型定义
 typedef struct {
     // format
-    AVFormatContext *avformat_context;
+    // 描述了一个媒体文件或媒体流的构成和基本信息
+    AVFormatContext *avformat_context;   
 
     // audio
+    // 使用解码方式的相关数据,AVCodec 包含该音频对应的解码器
     AVCodecContext  *acodec_context;
+    // 索引
     int              astream_index;
+    // AVRational这个结构标识一个分数，num为分数，den为分母
     AVRational       astream_timebase;
-    AVFrame          aframe;
+    // AVFrame 中存储的是经过解码后的原始数据。在解码中，AVFrame 是解码器的输出；在编码中，AVFrame 是编码器的输入。
+    AVFrame          aframe;             
 
     // video
     AVCodecContext  *vcodec_context;
@@ -43,9 +48,17 @@ typedef struct {
     AVRational       vstream_timebase;
     AVFrame          vframe;
 
-    void            *pktqueue; // pktqueue
+    void            *pktqueue; // pktqueue    PKTQUEUE*
     void            *render;   // render
     void            *datarate; // data rate
+
+    // 位运算
+    // & 两个位都为1时，结果才为1
+    // | 两个位都为0时，结果才为0
+    // ^ 两个位相同为0，相异为1
+    // ~ 0变1，1变0
+    // << 按二进制形式把所有数字向左移动相应的位数，高位移出（舍弃），低位的空位补0。相当于乘以2的n次方
+    // >> 按二进制形式把所有数字向右移动相应的位数，低位移出（舍弃），高位的空位补0。相当于除以2的n次方
 
     // thread
     #define PS_A_PAUSE    (1 << 0)  // audio decoding pause
@@ -55,7 +68,7 @@ typedef struct {
     #define PS_A_SEEK     (1 << 4)  // seek audio
     #define PS_V_SEEK     (1 << 5)  // seek video
     #define PS_RECONNECT  (1 << 7)  // reconnect
-    int              status, close;
+    int              status, close; // 播放状态  关闭
     int              seek_req ;
     int64_t          seek_pos ;
     int64_t          seek_dest;
@@ -66,11 +79,13 @@ typedef struct {
     // player common vars
     CMNVARS          cmnvars;
 
-    pthread_t        avdemux_thread;
+    pthread_t        avdemux_thread;    
     pthread_t        adecode_thread;
     pthread_t        vdecode_thread;
 
+    // 滤波器图表结构体，保存滤波器上下文、滤波器数量、线程类型、线程数量、回调函数等
     AVFilterGraph   *vfilter_graph;
+    // 滤波器上下文的结构体，包含滤波器实例、名字、输入Pad和Link、输出Pad和Link，还有ready字段表示滤波器准备就绪且带有优先级。
     AVFilterContext *vfilter_src_ctx;
     AVFilterContext *vfilter_sink_ctx;
 
@@ -345,10 +360,12 @@ static int player_prepare(PLAYER *player)
     #define AVDEV_GDIGRAB "gdigrab"
     #define AVDEV_VFWCAP  "vfwcap"
     char          *url    = player->url;
+    // 解复用器读取媒体文件并将其拆分为数据块（数据包）
     AVInputFormat *fmt    = NULL;
     //-- for avdevice
 
     AVRational    vrate   = { 20, 1 };
+    // 一种字典数据结构，可以简单理解为 key-value 集合
     AVDictionary *opts    = NULL;
     int           ret     = -1;
 
@@ -376,6 +393,10 @@ static int player_prepare(PLAYER *player)
         av_dict_set(&opts, "fpsprobesize"   , "2"      , 0);
         av_dict_set(&opts, "analyzeduration", "5000000", 0);
         if (player->init_params.avts_syncmode == AVSYNC_MODE_AUTO) {
+            // 把存储区 str1 和存储区 str2 的前 n 个字节进行比较。
+            // 如果返回值 = 0，则表示 str1 等于 str2。
+            // 如果返回值 > 0，则表示 str1 大于 str2
+            // 如果返回值 < 0，则表示 str1 小于 str2
             player->init_params.avts_syncmode = memcmp(player->url, "rtmp://", 7) == 0 ? AVSYNC_MODE_LIVE_SYNC1 : AVSYNC_MODE_LIVE_SYNC0;
         }
     } else {
@@ -758,7 +779,6 @@ void* player_open(char *file, void *win, PLAYER_INIT_PARAMS *params)
 {
     PLAYER *player = NULL;
 
-    // av register all
     av_register_all();
     avdevice_register_all();
     avfilter_register_all();
@@ -768,7 +788,7 @@ void* player_open(char *file, void *win, PLAYER_INIT_PARAMS *params)
     av_log_set_level   (AV_LOG_WARNING);
     av_log_set_callback(avlog_callback);
 
-    // alloc player context
+    // 分配所需的内存空间
     player = (PLAYER*)calloc(1, sizeof(PLAYER));
     if (!player) return NULL;
 
@@ -784,7 +804,9 @@ void* player_open(char *file, void *win, PLAYER_INIT_PARAMS *params)
     player->cmnvars.init_params = &player->init_params;
 
     //++ for player_prepare
+    // 把 src 所指向的字符串复制到 dest
     strcpy(player->url, file);
+
 #ifdef WIN32
     player->cmnvars.winmsg = win;
 #endif
@@ -796,9 +818,15 @@ void* player_open(char *file, void *win, PLAYER_INIT_PARAMS *params)
     // make sure player status paused
     player->status = (PS_A_PAUSE|PS_V_PAUSE|PS_R_PAUSE);
 
-    if (0) {
+    if (0)
+    {
 #ifdef ENABLE_AVKCP_SUPPORT
-    } else if (strstr(player->url, "avkcp://") == player->url) {
+    }
+    // strstr 查找第一次出现字符串 needle 的位置，不包含终止符 '\0'。
+    // 此处使用是  strstr 如果查找到 目标字符串 则返回首字符的地址，与源字符串的首字符地址一直
+    // 所以如果查找到 返回 true, char str[10] 表示的是字符数组，首地址。
+    else if (strstr(player->url, "avkcp://") == player->url)
+    {
         player->avkcpd = avkcpdemuxer_init(player->url, player, player->pktqueue, &player->acodec_context, &player->vcodec_context, &player->status,
                         &player->astream_timebase, &player->vstream_timebase, &player->render,
                          player->init_params.adev_render_type, player->init_params.vdev_render_type, &player->cmnvars,
@@ -808,9 +836,13 @@ void* player_open(char *file, void *win, PLAYER_INIT_PARAMS *params)
 #else
                          NULL);
 #endif
+
 #endif
+
 #ifdef ENABLE_FFRDP_SUPPORT
-    } else if (strstr(player->url, "ffrdp://") == player->url) {
+    } 
+    else if (strstr(player->url, "ffrdp://") == player->url) 
+    {
         player->ffrdpd = ffrdpdemuxer_init(player->url, player, player->pktqueue, &player->acodec_context, &player->vcodec_context, &player->status,
                         &player->astream_timebase, &player->vstream_timebase, &player->render,
                          player->init_params.adev_render_type, player->init_params.vdev_render_type, &player->cmnvars,
@@ -820,9 +852,13 @@ void* player_open(char *file, void *win, PLAYER_INIT_PARAMS *params)
 #else
                          NULL);
 #endif
+
 #endif
-    } else {
-        if (player->init_params.open_syncmode && player_prepare(player) == -1) {
+    }
+    else 
+    {
+        if (player->init_params.open_syncmode && player_prepare(player) == -1)
+        {
             av_log(NULL, AV_LOG_ERROR, "failed to prepare player !\n");
             goto error_handler;
         }

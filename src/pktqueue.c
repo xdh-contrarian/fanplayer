@@ -21,10 +21,12 @@ typedef struct {
     int        vtail;
     #define TS_STOP (1 << 0)
     int        status;
+	// 此结构存储压缩数据。
     AVPacket  *bpkts; // packet buffers
     AVPacket **fpkts; // free packets
     AVPacket **apkts; // audio packets
     AVPacket **vpkts; // video packets
+
     CMNVARS   *cmnvars;
     pthread_mutex_t lock;
     pthread_cond_t  cond;

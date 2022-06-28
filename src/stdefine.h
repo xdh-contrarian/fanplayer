@@ -43,12 +43,12 @@ typedef struct {
 #endif
 
 
-#if defined(_MSC_VER) && (_MSC_VER <= 1400)
+//#if defined(_MSC_VER) && (_MSC_VER <= 1700)
 struct timespec {
     time_t tv_sec; // seconds
     long  tv_nsec; // and nanoseconds
 };
-#endif
+//#endif
 
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
