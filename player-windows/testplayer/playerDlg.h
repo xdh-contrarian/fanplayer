@@ -4,6 +4,9 @@
 
 #include "ffplayer.h"
 
+#define TEST_RSTP_STREAM_URL ("rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mp4")
+const bool g_isTestRstpStream = true;  //  «∑Ò≤‚ ‘ rstp  ”∆µ¡˜
+
 // CplayerDlg dialog
 class CplayerDlg : public CDialog
 {
